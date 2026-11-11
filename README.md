@@ -1,316 +1,105 @@
-# A Hidden Markov Model Part-of-Speech Tagger with Laplace Smoothing and Log-Space Viterbi Decoding
+# HMM Part-of-Speech Tagger
 
+**A first-order Hidden Markov Model built from first principles — 96.05% word-level accuracy on the Brown Corpus.**
+
+[![Test accuracy](https://img.shields.io/badge/Test%20Accuracy-96.05%25-brightgreen.svg)](HMM_NLP/README.md#-experimental-results)
+[![Live demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-38e1ff.svg)](https://heangdeniss.github.io/HMM-Text_Segmentation/)
 [![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg)](https://www.python.org/)
 [![NLTK](https://img.shields.io/badge/NLTK-3.8%2B-green.svg)](https://www.nltk.org/)
 [![Dataset](https://img.shields.io/badge/Dataset-Brown%20Corpus-orange.svg)](https://en.wikipedia.org/wiki/Brown_Corpus)
-[![Accuracy](https://img.shields.io/badge/Test%20Accuracy-96.05%25-brightgreen.svg)]()
-[![Affiliation](https://img.shields.io/badge/Institution-Institute%20of%20Technology%20of%20Cambodia-red.svg)](https://itc.edu.kh/)
 
-> **A from-first-principles implementation of a first-order Hidden Markov Model (HMM) for Part-of-Speech (POS) tagging on the Brown Corpus, resolving Out-Of-Vocabulary (OOV) emission sparsity via tuned Laplace ($\alpha$) smoothing and eliminating numerical underflow through Log-Space Viterbi decoding.**
+**[Try the live tagger →](https://heangdeniss.github.io/HMM-Text_Segmentation/)** · [Notebook](HMM_NLP/Mode.ipynb) · [Paper](HMM_NLP/HMM_NLP.pdf) · [Full documentation](HMM_NLP/README.md)
 
----
+![HMM POS Tagger website preview](docs/assets/preview.png)
 
-## 📌 Table of Contents
+## Overview
 
-- [Overview](#-overview)
-- [Key Features](#-key-features)
-- [System Architecture](#-system-architecture)
-- [Mathematical Formulation](#-mathematical-formulation)
-  - [1. Parameter Estimation (MLE)](#1-parameter-estimation-mle)
-  - [2. Add-$\alpha$ Laplace Smoothing & OOV Handling](#2-add-alpha-laplace-smoothing--oov-handling)
-  - [3. Log-Space Viterbi Decoding](#3-log-space-viterbi-decoding)
-- [Dataset & Universal Tagset](#-dataset--universal-tagset)
-- [Experimental Results](#-experimental-results)
-  - [Hyperparameter Tuning ($\alpha$ Grid Search)](#hyperparameter-tuning-alpha-grid-search)
-  - [Test Set Evaluation](#test-set-evaluation)
-- [Error Analysis & Linguistic Insights](#-error-analysis--linguistic-insights)
-- [Repository Structure](#-repository-structure)
-- [Getting Started](#-getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Running the Notebook](#running-the-notebook)
-- [Authors & Acknowledgments](#-authors--acknowledgments)
-- [References](#-references)
+This project implements a complete part-of-speech tagger from scratch — no `hmmlearn`, no `nltk.tag.hmm` — and solves the two problems that break textbook HMMs on real text:
 
----
+- **Out-of-vocabulary words** never receive zero emission probability, thanks to an explicit `<OOV>` bucket and tuned Laplace smoothing.
+- **Long sentences** never underflow, because the Viterbi trellis runs entirely in log-space.
 
-## 📖 Overview
+The smoothing parameter α is selected with a validation-only grid search (`1e-12 … 1.0`), which finds a sharp optimum at **α = 1e-9**. The final model is evaluated on an untouched 20% test split of the Brown Corpus with the 12 Universal POS tags.
 
-Part-of-speech (POS) tagging is a foundational sequence labeling task in Natural Language Processing (NLP). Syntactic ambiguity presents a major challenge—a single surface form such as *"watch"* or *"offer"* can act as a **noun** or a **verb** depending on surrounding context.
+| Metric | Result |
+| :--- | :---: |
+| Test accuracy | **96.05%** |
+| Correct tokens | 223,015 / 232,177 |
+| Error rate | 3.95% |
+| Add-one baseline | 93.80% |
+| Relative error reduction | 36.3% |
+| Vocabulary | 45,153 words |
+| Training sentences | 45,872 |
 
-While standard textbooks describe Hidden Markov Models (HMMs) conceptually, deploying an HMM on real-world text exposes two severe engineering bottlenecks:
-1. **Out-of-Vocabulary (OOV) Sparsity**: Test corpora inevitably contain words absent from training. Maximum-likelihood estimation assigns them zero emission probability across all states, rendering entire sentences undecodable.
-2. **Floating-Point Underflow**: The standard Viterbi algorithm computes long chains of multiplicative joint probabilities ($P \ll 1.0$), rapidly underflowing to zero in 64-bit IEEE floating-point arithmetic.
+## Saved model
 
-This project implements an end-to-end POS tagger from scratch in Python (using standard data structures without opaque sequence-labeling libraries), trained on the **Brown Corpus** with the **12 Universal POS tags**. By coupling **data-driven hyperparameter grid search for Laplace smoothing** with **log-space dynamic programming**, the tagger achieves **96.05% word-level accuracy** on a held-out test set of 232,177 tokens.
+The trained parameters are committed so the tagger works without retraining:
 
----
+- `models/hmm_pos_model.pkl` — compact Python model (`π`, `A`, emission counts, metadata)
+- `docs/model/hmm_pos_model.json` — sparse browser model used by the live demo
 
-## ✨ Key Features
+Only non-zero emission counts are stored. Any unseen `(word, tag)` pair receives exactly the same probability as `<OOV>`, so the compact artifact is mathematically equivalent to the full 12 × 45,153 table.
 
-- **Pure First-Principles Implementation**: Built using standard Python containers (`defaultdict`, `Counter`) without relying on black-box HMM toolkits (`nltk.tag.hmm` or `hmmlearn`).
-- **Log-Space Dynamic Programming**: The Viterbi trellis recursion is reformulated into log-probabilities with $\epsilon = 10^{-12}$ guard offsets, completely preventing floating-point collapse.
-- **Dedicated OOV Emission Mass**: Add-$\alpha$ smoothing reserves an explicit, tag-dependent unseen word probability mass ($P(\text{OOV} \mid s_i)$), ensuring any arbitrary input remains decodable.
-- **Unbiased Hyperparameter Optimization**: $\alpha$ is swept over 8 orders of magnitude ($10^{-12}$ to $1.0$) exclusively on an internal validation set (10% of training data), avoiding evaluation data leakage.
-- **Reproducible Partitioning**: Uses fixed random seeds (`seed=42`) across a randomized 80/20 train/test split of 57,340 sentences across 15 distinct literary and journalistic genres.
-- **Complete Research Suite**: Accompanied by full academic research papers (`HMM_NLP.pdf`, `HMM_NLP.docx`) and presentation slides (`Slide.pdf`).
+```python
+import sys
+sys.path.insert(0, "HMM_NLP")
 
----
+from hmm_model import load_model, tag_text
 
-## 🏗 System Architecture
-
-```mermaid
-flowchart TD
-    subgraph Data["1. Data Pipeline & Partitioning"]
-        A[Brown Corpus<br>57,340 sentences] --> B[Random Shuffle<br>seed=42]
-        B --> C[80% Train Split<br>45,872 sentences]
-        B --> D[20% Held-Out Test Split<br>11,468 sentences]
-        C --> C1[Grid Train: 41,285 sents]
-        C --> C2[Validation: 4,587 sents]
-    end
-
-    subgraph Training["2. Maximum Likelihood Estimation"]
-        C --> E[Count Frequencies]
-        E --> F[Initial Probabilities π]
-        E --> G[Transition Matrix A]
-        E --> H[Raw Emission Matrix]
-    end
-
-    subgraph Optimization["3. Smoothing & Tuning"]
-        C1 & C2 --> I[Grid Search over α<br>1e-12 to 1.0]
-        I -->|Optimal α = 1e-9| J[Smoothed Emission Matrix B<br>with &lt;OOV&gt; Bucket]
-    end
-
-    subgraph Decoding["4. Sequence Decoding"]
-        D --> K[Token Sequence W]
-        F & G & J & K --> L[Log-Space Viterbi Trellis]
-        L --> M[Backpointer Traceback]
-        M --> N[Optimal Predicted Tag Sequence Q*]
-    end
-
-    subgraph Evaluation["5. Evaluation & Analysis"]
-        N --> O[Word-Level Accuracy: 96.05%]
-        N --> P[Linguistic Error Analysis]
-    end
+model = load_model("models/hmm_pos_model.pkl")
+for pairs in tag_text("It was a very tempting offer .", model):
+    print(pairs)
 ```
 
----
+Or from the command line:
 
-## 📐 Mathematical Formulation
-
-An HMM models the sequence of observed words $O = (o_1, o_2, \dots, o_T)$ generated by a hidden sequence of grammatical tags $Q = (q_1, q_2, \dots, q_T)$ over a state space $S = \{s_1, \dots, s_N\}$ ($N = 12$) and vocabulary $V$ ($|V| = 45,153$).
-
-Under the **first-order Markov assumption** and **output independence assumption**, the optimal tag sequence is:
-
-$$Q^* = \arg\max_{Q} \left[ \pi(q_1) \prod_{t=2}^T P(q_t \mid q_{t-1}) \prod_{t=1}^T P(o_t \mid q_t) \right]$$
-
-### 1. Parameter Estimation (MLE)
-
-- **Initial Distribution ($\pi$)**:
-  $$\pi(s_i) = \frac{\text{Count}(\text{sentence begins with } s_i)}{M}$$
-  where $M = 45,872$ is the total number of training sentences.
-
-- **Transition Probabilities ($A$)**:
-  $$A_{ij} = P(s_j \mid s_i) = \frac{\text{Count}(s_i \to s_j)}{\sum_{k=1}^N \text{Count}(s_i \to s_k)}$$
-
-### 2. Add-$\alpha$ Laplace Smoothing & OOV Handling
-
-The raw emission frequency fails on unseen words. We smooth the emission distribution by adding pseudo-count $\alpha$ and explicitly reserving a token slot for out-of-vocabulary words (`<OOV>`):
-
-- **Known Words ($w \in V$)**:
-  $$B_i(w) = P_{\text{smooth}}(w \mid s_i) = \frac{\text{Count}(s_i, w) + \alpha}{\text{Count}(s_i) + \alpha (|V| + 1)}$$
-
-- **Unseen Words ($w \notin V \implies \text{OOV}$)**:
-  $$B_i(\text{OOV}) = P_{\text{smooth}}(\text{OOV} \mid s_i) = \frac{\alpha}{\text{Count}(s_i) + \alpha (|V| + 1)}$$
-
-Because $\sum_{w \in V} B_i(w) + B_i(\text{OOV}) = 1.0$, the distribution remains strictly normalized.
-
-### 3. Log-Space Viterbi Decoding
-
-To avoid underflow, we transform products into log-sums. For time step $t$ and state $j$:
-
-$$\log v_t(j) = \max_{1 \le i \le N} \left[ \log v_{t-1}(i) + \log(A_{ij} + \epsilon) \right] + \log(B_j(o_t) + \epsilon)$$
-
-$$\text{backpointer}[t][j] = \arg\max_{1 \le i \le N} \left[ \log v_{t-1}(i) + \log(A_{ij} + \epsilon) \right]$$
-
-where $\epsilon = 10^{-12}$ provides numeric boundary stability.
-
----
-
-## 📊 Dataset & Universal Tagset
-
-The model is evaluated on the **Brown Corpus** (Francis & Kučera, 1979) mapped onto the **Universal Tagset** (Petrov et al., 2012):
-
-### Corpus Breakdown
-
-| Partition | Sentences | Words / Tokens | Purpose |
-| :--- | :---: | :---: | :--- |
-| **Full Corpus** | 57,340 | 1,161,192 | Complete 15-genre collection |
-| **Training Partition (80%)** | 45,872 | 929,015 | Vocabulary & Parameter estimation |
-| ├── *Grid-Search Sub-Train (90%)* | 41,285 | 836,113 | Parameter fitting during grid search |
-| └── *Validation Set (10%)* | 4,587 | 92,902 | $\alpha$ selection without test leakage |
-| **Test Partition (20%)** | 11,468 | 232,177 | Final unbiased generalisation test |
-
-### The 12 Universal POS Tags
-
-| Tag | Category | Examples from Corpus |
-| :---: | :--- | :--- |
-| `NOUN` | Noun (common & proper) | *jury, election, evidence, Friday* |
-| `VERB` | Verb (all forms) | *said, produced, took, running* |
-| `ADJ` | Adjective | *recent, grand, primary, non-partisan* |
-| `ADV` | Adverb | *not, very, ever, far* |
-| `PRON` | Pronoun | *he, it, she, they, someone* |
-| `DET` | Determiner / Article | *the, an, any, this, no* |
-| `ADP` | Adposition (Preposition / Postposition) | *of, in, with, to, on, between* |
-| `NUM` | Numeral / Number | *thirty, 30, $150, 1961* |
-| `CONJ` | Conjunction | *and, or, but, as* |
-| `PRT` | Particle | *to (infinitival), up, off* |
-| `.` | Punctuation marks | `.` `,` `;` `"` `'` `?` |
-| `X` | Other / Foreign / Abbreviations | *etc, non, de, per se* |
-
----
-
-## 🔬 Experimental Results
-
-### Hyperparameter Tuning ($\alpha$ Grid Search)
-
-Sweeping smoothing parameter $\alpha$ reveals that the classical textbook setting ($\alpha = 1.0$) catastrophically over-smooths large vocabularies by injecting excessive pseudo-mass into rare tags. Accuracy dramatically improves as $\alpha \to 10^{-9}$:
-
-| Smoothing Factor ($\alpha$) | Validation Accuracy | Notes |
-| :---: | :---: | :--- |
-| **$1.0$ (Add-One Textbook)** | 93.4885% | Severe over-smoothing of vocabulary |
-| $10^{-6}$ | 95.4712% | Substantial improvement |
-| $10^{-7}$ | 95.6834% | Lexical distinctions sharpen |
-| $10^{-8}$ | 95.8409% | Precision gains |
-| **$10^{-9}$ (Selected Optimal)** | **95.8529%** | **Peak validation accuracy** |
-| $10^{-10}$ | 95.8507% | Plateau begins |
-| $10^{-11}$ | 95.8496% | Plateau |
-| $10^{-12}$ | 95.8496% | Boundary limit |
-
-### Test Set Evaluation
-
-Final evaluation on the untouched 20% test partition (232,177 tokens) confirms the superiority of the tuned model:
-
-| Model Configuration | Correct Tokens / Total | Word Accuracy | Error Rate | Delta |
-| :--- | :---: | :---: | :---: | :---: |
-| **Baseline Add-One ($\alpha = 1.0$)** | 217,777 / 232,177 | 93.80% | 6.20% | Baseline |
-| **Tuned Laplace ($\alpha = 10^{-9}$)** | **223,015 / 232,177** | **96.05%** | **3.95%** | **+2.25% (36.3% error reduction)** |
-
----
-
-## 🔍 Error Analysis & Linguistic Insights
-
-An examination of the remaining 3.95% errors highlights structural bounds of first-order Markov sequence models:
-
-```
-Example Error Cases from Test Partition:
-─────────────────────────────────────────────────────────────────────────────
-1. Word: "non-partisan"  | Predicted: DET  | True: ADJ
-   Cause: Out-of-Vocabulary compound. The model falls back on bigram transition 
-          probabilities without sub-word/hyphen morphology.
-
-2. Word: "offer"         | Predicted: VERB | True: NOUN
-   Context: "... a very tempting offer ."
-   Cause: Lexical Noun-Verb ambiguity. The preceding modifier "tempting" (VERB/ADJ)
-          biases the 1-step bigram window toward an expected VERB.
-
-3. Word: "average"       | Predicted: NOUN | True: VERB
-   Context: "... the girls average between $150 and $200 ..."
-   Cause: Dominant frequency bias (average is far more frequently a noun in training).
-
-4. Word: "according"     | Predicted: ADV  | True: ADP
-   Cause: Multi-word preposition ("according to") treated as isolated bigram tags.
-─────────────────────────────────────────────────────────────────────────────
+```bash
+cd HMM_NLP
+python hmm_model.py tag "The quick brown fox jumps over the lazy dog ."
+python hmm_model.py evaluate   # reproduces 96.05%
 ```
 
-### The First-Order Markov Ceiling
-- **Local Window Limitation**: A bigram HMM only recalls the single preceding tag ($q_{t-1}$). Long-distance subject-verb agreement or clause-level scope falls outside its receptive field.
-- **Lack of Sub-Word Morphology**: The model has no character n-gram, suffix (`-ing`, `-tion`), or punctuation features for unseen words.
+## Website
 
----
+The site in [`docs/`](docs/) is a fully static GitHub Pages deployment with a client-side implementation of log-space Viterbi. It loads the sparse JSON model once, tags text locally, and renders colour-coded POS chips — no server, no API calls.
 
-## 📂 Repository Structure
+To deploy it:
+
+1. Push the repository to GitHub.
+2. Go to **Settings → Pages**.
+3. Choose **Deploy from a branch → `main` → `/docs`**, then **Save**.
+
+Local preview (why not `file://`? because browsers block local `fetch`):
+
+```bash
+python -m http.server 8000 --directory docs
+# open http://localhost:8000
+```
+
+Regenerate the model and website export:
+
+```bash
+cd HMM_NLP
+python hmm_model.py build
+```
+
+## Repository layout
 
 ```
 .
-├── Mode.ipynb         # Complete Jupyter Notebook: Data pipeline, MLE, Grid Search, Log-Viterbi, Testing
-├── HMM_NLP.pdf        # Formatted academic paper (IEEE format, camera-ready)
-├── HMM_NLP.docx       # Editable research manuscript with complete methodology and equations
-├── Slide.pdf          # Presentation slide deck (10 slides: background, architecture, results)
-└── README.md          # Project documentation (this file)
+├── HMM_NLP/          # Notebook, reusable module, paper, slides, detailed docs
+├── models/           # Saved Python model (.pkl)
+├── docs/             # Static GitHub Pages website
+└── README.md
 ```
 
----
+## Authors
 
-## 🚀 Getting Started
+Department of Applied Mathematics and Statistics, Institute of Technology of Cambodia.
 
-### Prerequisites
+- **Denis HEANG** — [@heangdeniss](https://github.com/heangdeniss)
+- **Udomveasna CHHEANG**
+- **Ratana SEING**
+- **Lyheng SIENG**
 
-- Python 3.9 or higher
-- Jupyter Notebook / JupyterLab / VS Code Python extension
-
-### Installation
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/heangdeniss/HMM-Text_Segmentation.git
-   cd HMM-Text_Segmentation
-   ```
-
-2. **Create and activate a virtual environment** (recommended):
-   ```bash
-   python -m venv venv
-   # On Windows:
-   venv\Scripts\activate
-   # On macOS/Linux:
-   source venv/bin/activate
-   ```
-
-3. **Install required dependencies**:
-   ```bash
-   pip install nltk scikit-learn
-   ```
-
-4. **Download NLTK corpora** (handled automatically inside the notebook, or run):
-   ```python
-   import nltk
-   nltk.download('brown')
-   nltk.download('universal_tagset')
-   ```
-
-### Running the Notebook
-
-Launch Jupyter and open `Mode.ipynb`:
-```bash
-jupyter notebook Mode.ipynb
-```
-
-You can run all cells sequentially to reproduce:
-1. Corpus shuffling and 80/20 train/test splitting.
-2. Training count matrices ($A$, $B$, $\pi$).
-3. The 8-value validation grid search identifying $\alpha = 10^{-9}$.
-4. Viterbi decoding of 11,468 test sentences achieving **96.05% accuracy**.
-5. Sentence-by-sentence error analysis.
-
----
-
-## 👥 Authors & Acknowledgments
-
-This research project was conducted at the **Department of Applied Mathematics and Statistics**, **Institute of Technology of Cambodia (ITC)**, Phnom Penh, Cambodia.
-
-- **Denis HEANG** ([@heangdeniss](https://github.com/heangdeniss)) - `heangdenis011468@gmail.com`
-- **Udomveasna CHHEANG** - `udomveasnachheang@gmail.com`
-- **Ratana SEING** - `ratana.seing@outlook.com`
-- **Lyheng SIENG** - `lyhengkp900@gmail.com`
-
----
-
-## 📚 References
-
-1. **Rabiner, L. R.** (1989). *A tutorial on hidden Markov models and selected applications in speech recognition*. Proceedings of the IEEE, 77(2), 257–286.
-2. **Viterbi, A. J.** (1967). *Error bounds for convolutional codes and an asymptotically optimum decoding algorithm*. IEEE Transactions on Information Theory, 13(2), 260–269.
-3. **Petrov, S., Das, D., & McDonald, R.** (2012). *A universal part-of-speech tagset*. Proceedings of LREC 2012, 2089–2096.
-4. **Francis, W. N., & Kučera, H.** (1979). *Brown Corpus Manual*. Brown University.
-5. **Jurafsky, D., & Martin, J. H.** (2023). *Speech and Language Processing* (3rd ed. draft). Stanford University.
-6. **Brants, T.** (2000). *TnT – a statistical part-of-speech tagger*. Proceedings of the 6th ANLP, 224–231.
-7. **Chen, S. F., & Goodman, J.** (1999). *An empirical study of smoothing techniques for language modeling*. Computer Speech & Language, 13(4), 359–394.
+See [HMM_NLP/README.md](HMM_NLP/README.md) for the full methodology, mathematical formulation, α grid-search table, error analysis, and references.

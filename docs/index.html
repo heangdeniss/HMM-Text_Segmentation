@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HMM POS Tagger — 96.05% on the Brown Corpus</title>
+  <meta name="description" content="A first-principles Hidden Markov Model part-of-speech tagger with tuned Laplace smoothing and log-space Viterbi decoding. Try the live in-browser demo." />
+  <meta name="theme-color" content="#070b14" />
+  <meta property="og:title" content="HMM POS Tagger — 96.05% on the Brown Corpus" />
+  <meta property="og:description" content="A first-principles Hidden Markov Model part-of-speech tagger with tuned Laplace smoothing and log-space Viterbi decoding." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://heangdeniss.github.io/HMM-Text_Segmentation/" />
+  <meta property="og:image" content="https://heangdeniss.github.io/HMM-Text_Segmentation/assets/preview.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#demo">Skip to the demo</a>
+
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="#top" aria-label="HMM POS Tagger home">
+        <span class="brand-mark" aria-hidden="true">H</span>
+        <span class="brand-text">HMM&nbsp;POS&nbsp;Tagger</span>
+      </a>
+      <nav class="nav" aria-label="Main">
+        <a href="#demo">Demo</a>
+        <a href="#method">Method</a>
+        <a href="#results">Results</a>
+        <a href="#tags">Tags</a>
+        <a class="nav-cta" href="https://github.com/heangdeniss/HMM-Text_Segmentation" target="_blank" rel="noopener">
+          GitHub <span aria-hidden="true">↗</span>
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- HERO -->
+    <section class="hero wrap">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="pulse" aria-hidden="true"></span> NLP · Sequence labelling · From scratch</p>
+        <h1>A Hidden Markov Model<br /><span class="grad">Part-of-Speech Tagger</span></h1>
+        <p class="lede">
+          A first-order HMM built from first principles on the Brown Corpus, with tuned
+          Laplace smoothing for out-of-vocabulary words and log-space Viterbi decoding
+          that never underflows.
+        </p>
+        <div class="hero-actions">
+          <a class="btn primary" href="#demo">Try the live tagger</a>
+          <a class="btn ghost" href="https://github.com/heangdeniss/HMM-Text_Segmentation" target="_blank" rel="noopener">
+            View source <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+        <ul class="badges" aria-label="Project highlights">
+          <li>96.05% accuracy</li>
+          <li>Brown Corpus</li>
+          <li>12 universal tags</li>
+          <li>Runs entirely in your browser</li>
+        </ul>
+      </div>
+
+      <aside class="model-card" aria-label="Model summary">
+        <div class="card-top">
+          <span class="dot-row" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="mono">model.summary()</span>
+        </div>
+        <dl class="metric-grid">
+          <div><dt>Test accuracy</dt><dd>96.05<span>%</span></dd></div>
+          <div><dt>Test tokens</dt><dd>232,177</dd></div>
+          <div><dt>Vocabulary</dt><dd>45,153</dd></div>
+          <div><dt>Smoothing α</dt><dd class="mono">1e-9</dd></div>
+        </dl>
+        <div class="card-bars" aria-hidden="true">
+          <span style="--w: 96.05%"></span>
+          <span style="--w: 92%"></span>
+          <span style="--w: 88%"></span>
+          <span style="--w: 81%"></span>
+          <span style="--w: 74%"></span>
+        </div>
+        <p class="card-foot mono">π · A · B → Q*</p>
+      </aside>
+    </section>
+
+    <!-- DEMO -->
+    <section id="demo" class="section wrap">
+      <div class="section-head">
+        <p class="kicker">Live demo</p>
+        <h2>Tag a sentence</h2>
+        <p>
+          The trained parameters are loaded as a compact JSON model, and the Viterbi
+          recursion runs locally in JavaScript. No server, no API calls.
+        </p>
+      </div>
+
+      <div class="tagger">
+        <div class="panel">
+          <div class="panel-head">
+            <span class="mono">input.txt</span>
+            <span class="status-pill" id="statusPill" data-state="loading">
+              <span class="status-dot" aria-hidden="true"></span>
+              <span id="statusPillText">Loading model</span>
+            </span>
+          </div>
+
+          <label class="sr-only" for="inputText">Text to tag</label>
+          <textarea id="inputText" spellcheck="false" rows="7">The quick brown fox jumps over the lazy dog .</textarea>
+
+          <div class="examples" id="examples" aria-label="Example sentences"></div>
+
+          <div class="actions">
+            <button class="btn primary" id="tagBtn" type="button" disabled>
+              <span>Tag sentence</span>
+              <kbd>Ctrl ↵</kbd>
+            </button>
+            <button class="btn ghost" id="clearBtn" type="button">Clear</button>
+          </div>
+
+          <p class="status mono" id="status" role="status" aria-live="polite">
+            Fetching <span>model/hmm_pos_model.json</span> …
+          </p>
+        </div>
+
+        <div class="panel output-panel">
+          <div class="panel-head">
+            <span class="mono">output.tags</span>
+            <span class="mono muted" id="timing"></span>
+          </div>
+          <div class="output" id="output" aria-live="polite">
+            <p class="placeholder">Tagged tokens will appear here.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATS -->
+    <section class="stats-band">
+      <div class="wrap stats-grid">
+        <div><strong>223,015</strong><span>correct tokens</span></div>
+        <div><strong>3.95%</strong><span>error rate</span></div>
+        <div><strong>57,340</strong><span>Brown sentences</span></div>
+        <div><strong>8×</strong><span>α grid-search values</span></div>
+      </div>
+    </section>
+
+    <!-- METHOD -->
+    <section id="method" class="section wrap">
+      <div class="section-head">
+        <p class="kicker">Under the hood</p>
+        <h2>Three ideas make it work</h2>
+        <p>A textbook HMM, engineered so that real-world text cannot break it.</p>
+      </div>
+
+      <div class="method-grid">
+        <article class="method-card">
+          <span class="step mono">01</span>
+          <h3>Maximum-likelihood estimation</h3>
+          <p>
+            Initial, transition and emission distributions are counted directly from
+            45,872 training sentences over 12 universal tags.
+          </p>
+          <pre><code>π(sᵢ) = count(start = sᵢ) / M
+Aᵢⱼ   = count(sᵢ → sⱼ) / Σₖ count(sᵢ → sₖ)</code></pre>
+        </article>
+
+        <article class="method-card">
+          <span class="step mono">02</span>
+          <h3>Laplace smoothing + OOV mass</h3>
+          <p>
+            An explicit <code>&lt;OOV&gt;</code> slot keeps every unseen word decodable.
+            A validation-only grid search selects α, avoiding test leakage.
+          </p>
+          <pre><code>Bᵢ(w)   = (count(sᵢ, w) + α) / D
+Bᵢ(OOV) = α / D
+D       = count(sᵢ) + α(|V| + 1)</code></pre>
+        </article>
+
+        <article class="method-card">
+          <span class="step mono">03</span>
+          <h3>Log-space Viterbi</h3>
+          <p>
+            Products become sums, so long sentences cannot underflow to zero.
+            A 10⁻¹² guard keeps impossible transitions finite.
+          </p>
+          <pre><code>log vₜ(j) = maxᵢ [ log vₜ₋₁(i) + log(Aᵢⱼ + ε) ]
+            + log(Bⱼ(oₜ) + ε)</code></pre>
+        </article>
+      </div>
+    </section>
+
+    <!-- RESULTS -->
+    <section id="results" class="section wrap">
+      <div class="section-head">
+        <p class="kicker">Experimental results</p>
+        <h2>Why α = 10⁻⁹ wins</h2>
+        <p>
+          Add-one smoothing (α = 1) injects enormous pseudo-mass into a 45k-word
+          vocabulary. Sweeping α over eight orders of magnitude finds a sharp optimum
+          on a held-out validation split.
+        </p>
+      </div>
+
+      <div class="results-grid">
+        <div class="table-card">
+          <table>
+            <caption class="sr-only">Validation accuracy by smoothing value</caption>
+            <thead>
+              <tr><th scope="col">α</th><th scope="col">Validation accuracy</th><th scope="col">Note</th></tr>
+            </thead>
+            <tbody>
+              <tr><td class="mono">1.0</td><td class="mono">93.4885%</td><td>Add-one textbook</td></tr>
+              <tr><td class="mono">1e-6</td><td class="mono">95.4712%</td><td>Lexical signal returns</td></tr>
+              <tr><td class="mono">1e-7</td><td class="mono">95.6834%</td><td>Sharpening</td></tr>
+              <tr><td class="mono">1e-8</td><td class="mono">95.8409%</td><td>Rapid gains</td></tr>
+              <tr class="best"><td class="mono">1e-9</td><td class="mono">95.8529%</td><td>Selected optimum</td></tr>
+              <tr><td class="mono">1e-10</td><td class="mono">95.8507%</td><td>Plateau</td></tr>
+              <tr><td class="mono">1e-12</td><td class="mono">95.8496%</td><td>Boundary limit</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="score-card">
+          <p class="score-label">Final held-out test</p>
+          <p class="score-value">96.05<span>%</span></p>
+          <p class="score-sub">223,015 / 232,177 tokens</p>
+          <div class="compare">
+            <div>
+              <span>Add-one baseline</span>
+              <strong class="mono">93.80%</strong>
+            </div>
+            <div>
+              <span>Tuned model</span>
+              <strong class="mono accent">96.05%</strong>
+            </div>
+          </div>
+          <p class="score-note">+2.25 points · 36.3% relative error reduction</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAGS -->
+    <section id="tags" class="section wrap">
+      <div class="section-head">
+        <p class="kicker">Universal tagset</p>
+        <h2>The 12 states of the model</h2>
+        <p>Every token receives exactly one of these labels.</p>
+      </div>
+      <ul class="tag-grid" id="tagLegend"></ul>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <div>
+        <p class="footer-title">HMM POS Tagger</p>
+        <p class="muted">
+          Department of Applied Mathematics and Statistics,<br />
+          Institute of Technology of Cambodia.
+        </p>
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/heangdeniss/HMM-Text_Segmentation" target="_blank" rel="noopener">Repository</a>
+        <a href="https://github.com/heangdeniss/HMM-Text_Segmentation/blob/main/HMM_NLP/HMM_NLP.pdf" target="_blank" rel="noopener">Paper (PDF)</a>
+        <a href="https://github.com/heangdeniss/HMM-Text_Segmentation/blob/main/HMM_NLP/Mode.ipynb" target="_blank" rel="noopener">Notebook</a>
+        <a href="#top">Back to top ↑</a>
+      </div>
+    </div>
+    <div class="wrap footer-base">
+      <p>Denis HEANG · Udomveasna CHHEANG · Ratana SEING · Lyheng SIENG</p>
+      <p class="mono">Built with Python, NLTK &amp; vanilla JavaScript</p>
+    </div>
+  </footer>
+
+  <script src="assets/tagger.js" defer></script>
+  <script src="assets/app.js" defer></script>
+</body>
+</html>
