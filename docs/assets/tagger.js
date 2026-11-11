@@ -17,18 +17,18 @@
   const TOKEN_RE = /[\p{L}\p{N}]+(?:['\u2019-][\p{L}\p{N}]+)*|[^\s\p{L}\p{N}]/gu;
 
   const TAG_META = {
-    NOUN: { label: "Noun", description: "Common and proper nouns", color: "#2f5d8a" },
-    VERB: { label: "Verb", description: "All verb forms", color: "#a8452f" },
-    ADJ: { label: "Adjective", description: "Modifiers of nouns", color: "#8a6510" },
-    ADV: { label: "Adverb", description: "Modifiers of verbs and adjectives", color: "#3f6b35" },
-    PRON: { label: "Pronoun", description: "Personal, relative, indefinite", color: "#67508f" },
-    DET: { label: "Determiner", description: "Articles and quantifiers", color: "#9c3f60" },
-    ADP: { label: "Adposition", description: "Prepositions and postpositions", color: "#226b66" },
-    NUM: { label: "Numeral", description: "Numbers and numeric words", color: "#82592a" },
-    CONJ: { label: "Conjunction", description: "Coordinating and subordinating", color: "#7d6a1f" },
-    PRT: { label: "Particle", description: "Infinitival 'to', verb particles", color: "#4f5f8a" },
-    ".": { label: "Punctuation", short: "PUNCT", description: "Sentence and clause boundaries", color: "#63686f" },
-    X: { label: "Other", description: "Foreign words and abbreviations", color: "#8a5387" },
+    NOUN: { label: "Noun", description: "Common and proper nouns", color: "#7fb1ff" },
+    VERB: { label: "Verb", description: "All verb forms", color: "#ff9a7a" },
+    ADJ: { label: "Adjective", description: "Modifiers of nouns", color: "#e8c268" },
+    ADV: { label: "Adverb", description: "Modifiers of verbs and adjectives", color: "#7fd6a1" },
+    PRON: { label: "Pronoun", description: "Personal, relative, indefinite", color: "#c4a4f5" },
+    DET: { label: "Determiner", description: "Articles and quantifiers", color: "#ff9ec4" },
+    ADP: { label: "Adposition", description: "Prepositions and postpositions", color: "#6fd3cf" },
+    NUM: { label: "Numeral", description: "Numbers and numeric words", color: "#d8ab7a" },
+    CONJ: { label: "Conjunction", description: "Coordinating and subordinating", color: "#d3d06b" },
+    PRT: { label: "Particle", description: "Infinitival 'to', verb particles", color: "#a9b8f0" },
+    ".": { label: "Punctuation", short: "PUNCT", description: "Sentence and clause boundaries", color: "#93a3b4" },
+    X: { label: "Other", description: "Foreign words and abbreviations", color: "#e39fd8" },
   };
 
   function tokenize(text) {

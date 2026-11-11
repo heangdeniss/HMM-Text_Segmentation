@@ -106,7 +106,7 @@
 
       result.tokens.forEach((word, index) => {
         const tag = result.tags[index];
-        const meta = TAG_META[tag] || { label: tag, color: "#63686f" };
+        const meta = TAG_META[tag] || { label: tag, color: "#93a3b4" };
 
         const token = document.createElement("span");
         token.className = "token";

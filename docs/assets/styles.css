@@ -1,20 +1,20 @@
 /* ==========================================================================
-   HMM POS Tagger — clean light theme
+   HMM POS Tagger — clean dark blue theme
    ========================================================================== */
 
 :root {
-  color-scheme: light;
-  --bg: #fcfcfa;
-  --surface: #ffffff;
-  --surface-soft: #fafaf7;
-  --ink: #17181b;
-  --muted: #5f646c;
-  --quiet: #8b8f96;
-  --line: #e5e5e0;
-  --line-soft: #edede7;
-  --accent: #1d6b52;
-  --accent-soft: #eef4f0;
-  --danger: #a8473a;
+  color-scheme: dark;
+  --bg: #0a1622;
+  --surface: #10202f;
+  --surface-soft: #0c1926;
+  --ink: #eaf1f8;
+  --muted: #a6b5c4;
+  --quiet: #7b8c9d;
+  --line: #223547;
+  --line-soft: #1a2b3b;
+  --accent: #64d3ad;
+  --accent-soft: rgba(100, 211, 173, 0.1);
+  --danger: #ef8a7b;
   --radius: 12px;
   --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
@@ -72,7 +72,7 @@ svg {
 }
 
 ::selection {
-  background: #dcebe3;
+  background: rgba(100, 211, 173, 0.28);
 }
 
 :focus-visible {
@@ -106,7 +106,7 @@ svg {
   padding: 9px 14px;
   border-radius: 6px;
   background: var(--ink);
-  color: #fff;
+  color: var(--bg);
   font-size: 0.85rem;
   transition: top 0.15s ease;
 }
@@ -124,7 +124,7 @@ svg {
   top: 0;
   z-index: 20;
   border-bottom: 1px solid var(--line-soft);
-  background: rgba(252, 252, 250, 0.86);
+  background: rgba(10, 22, 34, 0.86);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
@@ -238,7 +238,7 @@ h1 {
   border: 1px solid var(--ink);
   border-radius: 7px;
   background: var(--ink);
-  color: #fff;
+  color: #08131f;
   font-size: 0.88rem;
   font-weight: 550;
   cursor: pointer;
@@ -246,8 +246,8 @@ h1 {
 }
 
 .button:hover {
-  background: #000;
-  border-color: #000;
+  background: #ffffff;
+  border-color: #ffffff;
 }
 
 .button:disabled {
@@ -257,12 +257,12 @@ h1 {
 
 .button kbd {
   padding: 1px 5px;
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  border: 1px solid rgba(8, 19, 31, 0.28);
   border-radius: 4px;
   font-family: var(--mono);
   font-size: 0.62rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(8, 19, 31, 0.72);
 }
 
 .text-link {
@@ -351,7 +351,7 @@ h2 {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
-  box-shadow: 0 1px 2px rgba(17, 20, 24, 0.04);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
   overflow: hidden;
 }
 
@@ -392,7 +392,7 @@ h2 {
 
 .example:hover {
   color: var(--ink);
-  background: #f3f3ee;
+  background: #172a3b;
 }
 
 .example::before {
@@ -452,7 +452,7 @@ h2 {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #b08a2e;
+  background: #d9a441;
 }
 
 .status[data-state="ready"] .status-dot {
@@ -523,7 +523,7 @@ h2 {
 .output::-webkit-scrollbar-thumb {
   border: 3px solid var(--surface-soft);
   border-radius: 999px;
-  background: #d6d6d0;
+  background: #2b4156;
 }
 
 .placeholder {
@@ -543,7 +543,7 @@ h2 {
 }
 
 .token {
-  --tag-color: #6b7078;
+  --tag-color: #93a3b4;
   display: inline-flex;
   flex-direction: column;
   gap: 1px;
@@ -607,7 +607,7 @@ h2 {
 .step-body code {
   padding: 1px 4px;
   border-radius: 4px;
-  background: #f1f1ec;
+  background: #172a3b;
   font-family: var(--mono);
   font-size: 0.84em;
 }
@@ -617,7 +617,7 @@ h2 {
   font-family: var(--mono);
   font-size: 0.72rem;
   line-height: 1.8;
-  color: #4c5852;
+  color: #9db3ab;
   overflow-wrap: anywhere;
 }
 
@@ -723,7 +723,7 @@ tr.best td {
 }
 
 .tag-item {
-  --tag-color: #6b7078;
+  --tag-color: #93a3b4;
   display: flex;
   align-items: baseline;
   gap: 10px;
