@@ -5,28 +5,14 @@
   const { createEngine, tokenize, TAG_META } = window.HMMTagger;
   const MODEL_URL = "model/hmm_pos_model.json";
   const MAX_TOKENS = 600;
+  const TAG_ORDER = ["NOUN", "VERB", "ADJ", "ADV", "PRON", "DET", "ADP", "NUM", "CONJ", "PRT", ".", "X"];
 
   const EXAMPLES = [
-    {
-      label: "Quick fox",
-      text: "The quick brown fox jumps over the lazy dog .",
-    },
-    {
-      label: "Noun / verb ambiguity",
-      text: "It was a very tempting offer .",
-    },
-    {
-      label: "Frequency bias",
-      text: "With tips , the girls average between $150 and $200 a week , depending on basic salary .",
-    },
-    {
-      label: "Long sentence",
-      text: "According to state law a slave had to be at least thirty years old before he could be freed .",
-    },
-    {
-      label: "Unseen words",
-      text: "The blockchain startup open-sourced its transformer pipeline in Phnom Penh .",
-    },
+    { label: "Quick fox", text: "The quick brown fox jumps over the lazy dog ." },
+    { label: "Ambiguity", text: "It was a very tempting offer ." },
+    { label: "Unseen words", text: "The blockchain startup open-sourced its transformer pipeline in Phnom Penh ." },
+    { label: "Long sentence", text: "According to state law a slave had to be at least thirty years old before he could be freed ." },
+    { label: "Numbers", text: "With tips , the girls average between $150 and $200 a week ." },
   ];
 
   const els = {
@@ -36,49 +22,43 @@
     output: document.getElementById("output"),
     timing: document.getElementById("timing"),
     status: document.getElementById("status"),
-    pill: document.getElementById("statusPill"),
-    pillText: document.getElementById("statusPillText"),
+    statusText: document.getElementById("statusText"),
     examples: document.getElementById("examples"),
     legend: document.getElementById("tagLegend"),
   };
 
   let engine = null;
-  let readyStatus = "";
+  let readyText = "";
 
-  function setPill(state, text) {
-    els.pill.dataset.state = state;
-    els.pillText.textContent = text;
-  }
-
-  function setStatus(text, isError) {
-    els.status.textContent = text;
-    els.status.classList.toggle("error", Boolean(isError));
+  function setStatus(state, text) {
+    els.status.dataset.state = state;
+    els.statusText.textContent = text;
   }
 
   function renderLegend() {
-    const order = ["NOUN", "VERB", "ADJ", "ADV", "PRON", "DET", "ADP", "NUM", "CONJ", "PRT", ".", "X"];
     const fragment = document.createDocumentFragment();
 
-    for (const tag of order) {
+    for (const tag of TAG_ORDER) {
       const meta = TAG_META[tag];
       if (!meta) continue;
 
       const item = document.createElement("li");
       item.className = "tag-item";
       item.style.setProperty("--tag-color", meta.color);
+      item.title = meta.description;
 
       const dot = document.createElement("span");
       dot.className = "tag-dot";
       dot.setAttribute("aria-hidden", "true");
 
-      const body = document.createElement("div");
-      const name = document.createElement("strong");
-      name.textContent = meta.short || tag;
-      const description = document.createElement("span");
-      description.textContent = `${meta.label} — ${meta.description}`;
+      const code = document.createElement("strong");
+      code.textContent = meta.short || tag;
 
-      body.append(name, description);
-      item.append(dot, body);
+      const name = document.createElement("span");
+      name.className = "tag-name";
+      name.textContent = meta.label;
+
+      item.append(dot, code, name);
       fragment.append(item);
     }
 
@@ -99,7 +79,7 @@
     }
   }
 
-  function clearOutput(message) {
+  function showPlaceholder(message) {
     els.output.replaceChildren();
     const placeholder = document.createElement("p");
     placeholder.className = "placeholder";
@@ -110,7 +90,7 @@
 
   function render(results, elapsedMs) {
     if (results.length === 0) {
-      clearOutput("Type a sentence to tag it.");
+      showPlaceholder("Type a sentence to tag it.");
       return;
     }
 
@@ -126,7 +106,7 @@
 
       result.tokens.forEach((word, index) => {
         const tag = result.tags[index];
-        const meta = TAG_META[tag] || { label: tag, color: "#94a3b8" };
+        const meta = TAG_META[tag] || { label: tag, color: "#63686f" };
 
         const token = document.createElement("span");
         token.className = "token";
@@ -139,18 +119,14 @@
 
         const tagSpan = document.createElement("span");
         tagSpan.className = "token-tag";
-        tagSpan.textContent = tag;
+        tagSpan.textContent = meta.short || tag;
 
         token.append(wordSpan, tagSpan);
         tokens.append(token);
         tokenCount += 1;
       });
 
-      const meta = document.createElement("p");
-      meta.className = "result-meta";
-      meta.textContent = `${result.tokens.length} tokens`;
-
-      article.append(tokens, meta);
+      article.append(tokens);
       fragment.append(article);
     }
 
@@ -167,17 +143,16 @@
     let truncated = false;
 
     for (const line of els.input.value.split(/\r?\n/)) {
-      if (tokenCount >= MAX_TOKENS) break;
+      if (tokenCount >= MAX_TOKENS) {
+        truncated = true;
+        break;
+      }
 
       const tokens = tokenize(line);
       if (tokens.length === 0) continue;
 
       if (tokenCount + tokens.length > MAX_TOKENS) {
         truncated = true;
-        setStatus(
-          `Long input truncated to the first ${MAX_TOKENS} tokens.`,
-          false
-        );
       }
 
       const limited = tokens.slice(0, MAX_TOKENS - tokenCount);
@@ -188,9 +163,12 @@
     render(results, performance.now() - started);
 
     if (results.length === 0) {
+      setStatus("ready", readyText);
       els.timing.textContent = "";
-    } else if (!truncated) {
-      setStatus(readyStatus);
+    } else if (truncated) {
+      setStatus("notice", `Showing the first ${MAX_TOKENS} tokens.`);
+    } else {
+      setStatus("ready", readyText);
     }
   }
 
@@ -198,31 +176,26 @@
     const vocab = Number(model.meta?.vocab_size || 0);
     const alpha = Number(model.meta?.alpha || 0);
 
-    setPill("ready", "Model ready");
-    readyStatus = `Ready · ${vocab.toLocaleString("en-US")}-word vocabulary · ${model.tags.length} tags · α = ${alpha}`;
-    setStatus(readyStatus);
+    readyText = `Model ready · ${vocab.toLocaleString("en-US")} words · α = ${alpha}`;
+    setStatus("ready", readyText);
     els.tag.disabled = false;
-    els.input.disabled = false;
 
     tagInput();
   }
 
   function setFailed(message) {
-    setPill("error", "Model unavailable");
-    setStatus(message, true);
-    clearOutput("The model could not be loaded.");
+    setStatus("error", message);
+    showPlaceholder("The model could not be loaded.");
+    els.tag.disabled = true;
   }
 
   async function init() {
     renderLegend();
     renderExamples();
-    clearOutput("Loading the model …");
-    els.input.disabled = true;
+    showPlaceholder("Loading the model …");
 
     if (window.location.protocol === "file:") {
-      setFailed(
-        "Browsers block file:// requests. Serve this folder over HTTP (python -m http.server) or open the GitHub Pages deployment."
-      );
+      setFailed("Browsers block file:// requests — serve this folder over HTTP.");
       return;
     }
 
@@ -237,9 +210,7 @@
       setReady(model);
     } catch (error) {
       console.error(error);
-      setFailed(
-        `Could not load ${MODEL_URL}. Check that docs/model/hmm_pos_model.json exists and that the site is served over HTTP.`
-      );
+      setFailed(`Could not load ${MODEL_URL}. Check that the file exists and is served over HTTP.`);
     }
   }
 
@@ -248,7 +219,8 @@
   els.clear.addEventListener("click", () => {
     els.input.value = "";
     els.input.focus();
-    clearOutput("Type a sentence to tag it.");
+    showPlaceholder("Type a sentence to tag it.");
+    if (engine) setStatus("ready", readyText);
   });
 
   els.input.addEventListener("keydown", (event) => {

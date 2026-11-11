@@ -61,7 +61,7 @@ python hmm_model.py evaluate   # reproduces 96.05%
 
 ## Website
 
-The site in [`docs/`](docs/) is a fully static GitHub Pages deployment with a client-side implementation of log-space Viterbi. It loads the sparse JSON model once, tags text locally, and renders colour-coded POS chips — no server, no API calls.
+The site in [`docs/`](docs/) is a fully static GitHub Pages deployment with a client-side implementation of log-space Viterbi. It loads the sparse JSON model once, tags text locally, and renders colour-coded tagged tokens — no server, no API calls.
 
 To deploy it:
 

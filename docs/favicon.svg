@@ -1,11 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="HMM POS Tagger">
-  <defs>
-    <linearGradient id="g" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#38e1ff" />
-      <stop offset="1" stop-color="#6ee7b7" />
-    </linearGradient>
-  </defs>
-  <rect width="64" height="64" rx="14" fill="#070b14" />
-  <path d="M35 12H20a4 4 0 0 0-4 4v15l19 19a4 4 0 0 0 5.66 0l13.34-13.34a4 4 0 0 0 0-5.66L35 12Z" fill="none" stroke="url(#g)" stroke-width="3.5" stroke-linejoin="round" />
-  <circle cx="25" cy="24" r="3.2" fill="url(#g)" />
+  <rect width="64" height="64" rx="14" fill="#fcfcfa" />
+  <rect x="0.75" y="0.75" width="62.5" height="62.5" rx="13.25" fill="none" stroke="#e5e5e0" />
+  <path d="M35 12H20a4 4 0 0 0-4 4v15l19 19a4 4 0 0 0 5.66 0l13.34-13.34a4 4 0 0 0 0-5.66L35 12Z" fill="none" stroke="#17181b" stroke-width="3.5" stroke-linejoin="round" />
+  <circle cx="25" cy="24" r="3.2" fill="#1d6b52" />
 </svg>
